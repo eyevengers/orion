@@ -1,6 +1,7 @@
 package com.example.arfaz.epsonv249;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,6 +10,7 @@ import android.util.Log;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -16,6 +18,7 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.android.Utils;
+import org.opencv.core.Size;
 import org.opencv.features2d.DMatch;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
@@ -52,6 +55,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     static {
         if (!OpenCVLoader.initDebug())
+
             Log.d("ERROR", "Unable to load OpenCV");
         else
             Log.d("SUCCESS", "OpenCV loaded");
@@ -88,7 +92,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMINGLUT);
         img1 = new Mat();
         AssetManager assetManager = getAssets();
-        InputStream istr = assetManager.open("a.jpeg");
+        InputStream istr = assetManager.open("piece2.jpeg");
         Bitmap bitmap = BitmapFactory.decodeStream(istr);
         Utils.bitmapToMat(bitmap, img1);
         Imgproc.cvtColor(img1, img1, Imgproc.COLOR_RGB2GRAY);
@@ -160,14 +164,14 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     public Mat recognize(Mat aInputFrame) {
 
         Imgproc.cvtColor(aInputFrame, aInputFrame, Imgproc.COLOR_RGB2GRAY);
-        descriptors1 = new Mat();
         descriptors2 = new Mat();
         keypoints2 = new MatOfKeyPoint();
         detector.detect(aInputFrame, keypoints2);
         descriptor.compute(aInputFrame, keypoints2, descriptors2);
         MatOfDMatch matches = new MatOfDMatch();
         if (img1.type() == aInputFrame.type()) {
-            matcher.match(descriptors1, descriptors2, matches);
+            if(!descriptors2.empty())
+                matcher.match(descriptors1, descriptors2, matches);
         } else {
             return aInputFrame;
         }
@@ -184,22 +188,33 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 max_dist = dist;
         }
 
+
         LinkedList<DMatch> good_matches = new LinkedList<DMatch>();
         for (int i = 0; i < matchesList.size(); i++) {
-            if (matchesList.get(i).distance <= (1 * min_dist))
+            //Precision
+            if (matchesList.get(i).distance <= (1.315 * min_dist))
                 good_matches.addLast(matchesList.get(i));
         }
 
         MatOfDMatch goodMatches = new MatOfDMatch();
         goodMatches.fromList(good_matches);
+
+        if(good_matches.size() > 130){
+
+            System.out.println("Matches : " + good_matches.size());
+        }
+
         Mat outputImg = new Mat();
         MatOfByte drawnMatches = new MatOfByte();
         if (aInputFrame.empty() || aInputFrame.cols() < 1 || aInputFrame.rows() < 1) {
             return aInputFrame;
         }
-        keypoints1 = new MatOfKeyPoint();
+
         Features2d.drawMatches(img1, keypoints1, aInputFrame, keypoints2, goodMatches, outputImg, GREEN, RED, drawnMatches, Features2d.NOT_DRAW_SINGLE_POINTS);
         Imgproc.resize(outputImg, outputImg, aInputFrame.size());
+
+
+
 
         return outputImg;
     }
