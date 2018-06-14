@@ -2,13 +2,17 @@ package com.example.arfaz.epsonv249;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.SurfaceView;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -44,6 +48,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private int w, h;
     private CameraBridgeViewBase mOpenCvCameraView;
     TextView tvName;
+    Button btn;
     Scalar RED = new Scalar(255, 0, 0);
     Scalar GREEN = new Scalar(0, 255, 0);
     FeatureDetector detector;
@@ -124,6 +129,16 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
         tvName = (TextView) findViewById(R.id.text1);
+        btn = (Button) findViewById(R.id.button);
+        btn.setOnClickListener(new View.OnClickListener() {
+
+
+            public void onClick(View v) {
+                // TODO Auto-generated method stub
+                tvName.setText("Searching...");
+                tvName.setTextColor(Color.WHITE);
+            }
+        });
 
     }
 
@@ -200,9 +215,19 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         goodMatches.fromList(good_matches);
 
         if(good_matches.size() > 130){
+            runOnUiThread(new Runnable() {
+
+                @Override
+                public void run() {
+                    tvName.setText("OBJECT FOUND !");
+                    tvName.setTextColor(Color.GREEN);
+                }
+            });
 
             System.out.println("Matches : " + good_matches.size());
         }
+
+
 
         Mat outputImg = new Mat();
         MatOfByte drawnMatches = new MatOfByte();
